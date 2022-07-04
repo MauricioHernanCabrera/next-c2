@@ -26,7 +26,7 @@ module.exports.createComponentIndex = (route, componentName) => {
 module.exports.createStorybook = (route, componentName) => {
   const data = `import React from "react";
 
-import ${componentName} from "${route.replace("./src/", "")}/${componentName}";
+import ${componentName} from "${route.replace("./src/", "")}";
 
 // eslint-disable-next-line import/no-anonymous-default-export
 export default {
