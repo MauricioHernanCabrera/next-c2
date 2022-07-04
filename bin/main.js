@@ -1,20 +1,21 @@
 #!/usr/bin/env node
 const arg = require("arg");
-const selectCommandComponent = require("./component");
 
-const main = () => {
+const main = async () => {
   const { _: commandsArgs } = arg({});
 
   const [module, ...commands] = commandsArgs;
 
   switch (module) {
-    case "component": {
-      selectCommandComponent(commands);
+    case "component:add-storybook": {
+      await require("./component/add-storybook")(commands);
       break;
     }
-    
-    case "create-app": {
-      console.log("---create-app")
+  }
+
+  switch (module) {
+    case "component:new": {
+      await require("./component/new.js")(commands);
       break;
     }
   }

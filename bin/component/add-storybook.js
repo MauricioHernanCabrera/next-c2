@@ -1,93 +1,74 @@
-const { existsSync, mkdirSync, rmSync, writeFileSync, readFileSync } = require("fs");
+const {
+  existsSync,
+  rmSync,
+  writeFileSync,
+  readFileSync,
+} = require("fs");
+const {
+  getFolderRoute,
+  getComponentName,
+  createComponentFolder,
+  createComponentIndex,
+  createStorybook,
+} = require("../utils");
 
-const getFolderRoute = (route) => {
-  const names = route.split('/');
-  names.pop();
-  return names.join("/");
-}
+const addPropTypes = (lines, componentName) => {
+  const propTypeLibrary = `import PropTypes from \"prop-types\";`;
+  const exportDefault = `export default ${componentName}`;
 
-const getComponentName = (route) => {
-  const names = route.split('/');
-  return names.pop();
-}
+  if (!lines.includes(propTypeLibrary)) {
+    lines.unshift(propTypeLibrary);
+  }
 
-const createComponentFolder = (route) => mkdirSync(route);
+  const index = lines.findIndex((item) => item.includes(exportDefault));
 
-const createComponentIndex = (route, componentName) => {
-  writeFileSync(`${route}/index.js`, `export { default } from "${route.replace("./src/", "")}/${componentName}";`)
+  if (index !== -1) {
+    lines = [
+      ...lines.slice(0, index),
+      `${componentName}.propTypes = {};`,
+      "",
+      `${componentName}.defaultProps = {};`,
+      "",
+      ...lines.slice(index),
+    ];
+  }
+
+  return lines;
 };
 
 const createComponent = (route, componentName) => {
   const data = readFileSync(`${route}.js`);
-  let lines = data.toString().split("\r\n");
-  const propTypeLibrary = `import PropTypes from \"prop-types\";`;
-  const exportDefault = `export default ${componentName}`
-  
-
-  if (!lines.includes(propTypeLibrary)) {
-    lines.unshift(propTypeLibrary);
-    const index = lines.findIndex((item) => item.includes(exportDefault));
-    
-    if (index !== -1) {
-      lines = [
-        ...lines.slice(0, index),
-        `${componentName}.propTypes = {};`,
-        "",
-        `${componentName}.defaultProps = {};`,
-        "",
-        ...lines.slice(index),
-      ]
-    }
-  }
-
-  writeFileSync(`./${route}/${componentName}.js`, lines.join("\r\n"))
-};
-
-const createStorybook = (route, componentName) => {
-  const data = `import React from "react";
-
-import ${componentName} from "${route.replace("./src/", "")}/${componentName}";
-
-// eslint-disable-next-line import/no-anonymous-default-export
-export default {
-  title: "${route.replace("./src/", "")}/${componentName}",
-  component: ${componentName},
-};
-
-const data = {};
-
-const Template = (args) => (
-  <${componentName} {...args} />
-);
-
-export const Default = Template.bind({});
-
-Default.args = {
-  ...data,
-};
-`
-  writeFileSync(`./${route}/${componentName}.stories.js`, data)
+  let lines = data.toString().split("\n");
+  lines = addPropTypes(lines, componentName);
+  writeFileSync(`./${route}/${componentName}.js`, lines.join("\n"));
 };
 
 const addStorybook = (commands) => {
   const [route] = commands;
-  const fullRoute = `./${route}.js`;
+  const BASE = "./src/components";
+  const fullRoute = `${BASE}/${route}.js`;
 
   if (!existsSync(fullRoute)) {
-    return "Component doesn't exists";
+    throw new Error("Component don't exists");
   }
 
-  const folderRoute = getFolderRoute(route)
-  const componentName = getComponentName(route)
+  const folderRoute = getFolderRoute(route);
+  const componentName = getComponentName(route);
 
-  if (existsSync(`./${folderRoute}/${componentName}`)) {
-    rmSync(`./${folderRoute}/${componentName}`, { recursive: true, force: true })
+  if (existsSync(`${BASE}/${folderRoute}/${componentName}`)) {
+    rmSync(`${BASE}/${folderRoute}/${componentName}`, {
+      recursive: true,
+      force: true,
+    });
   }
 
-  createComponentFolder(`./${folderRoute}/${componentName}`);
-  createComponentIndex(`./${folderRoute}/${componentName}`, componentName);
-  createComponent(`./${folderRoute}/${componentName}`, componentName);
-  createStorybook(`./${folderRoute}/${componentName}`, componentName);
+  createComponentFolder(`${BASE}/${folderRoute}/${componentName}`);
+  createComponentIndex(
+    `${BASE}/${folderRoute}/${componentName}`,
+    componentName
+  );
+  createComponent(`${BASE}/${folderRoute}/${componentName}`, componentName);
+  createStorybook(`${BASE}/${folderRoute}/${componentName}`, componentName);
 };
 
 module.exports = addStorybook;
