@@ -30,7 +30,7 @@ import ${componentName} from "${route.replace("./src/", "")}";
 
 // eslint-disable-next-line import/no-anonymous-default-export
 export default {
-  title: "${route.replace("./src/", "")}/${componentName}",
+  title: "${route.replace("./src/", "")}",
   component: ${componentName},
 };
 
